@@ -8,6 +8,7 @@ import Button from '../../../components/UI/Button/Button'
 import Input from '../../../components/UI/Input/Input'
 import withErrorHandler from '../../../hoc/withErrorHandler/withErrorHandler';
 import * as actions from '../../../store/actions/index';
+import {updateObject} from "../../../shared/utility";
 
 import classes from './ContactData.css'
 
@@ -123,20 +124,22 @@ class ContactData extends Component {
 		const order = {
 			ingredients: this.props.ings,
 			price: this.props.price,
-			orderData: formData
+			orderData: formData,
+			userId: this.props.userId
 		};
-		this.props.onOrderBurger(order);
+		this.props.onOrderBurger(order, this.props.token);
 	};
 
 	inputChangedHandler = (event, inputId) => {
-		const updatedOrderForm = {
-			...this.state.orderForm
-		};
-		const updatedFormElement = {...updatedOrderForm[inputId]};
-		updatedFormElement.value = event.target.value;
-		updatedFormElement.valid = this.checkValidity(updatedFormElement.value, updatedFormElement.validation);
-		updatedFormElement.touched = true;
-		updatedOrderForm[inputId] = updatedFormElement;
+
+		const updatedFormElement = updateObject(this.state.orderForm[inputId], {
+			value:event.target.value,
+			valid:this.checkValidity(event.target.value, this.state.orderForm[inputId].validation),
+			touched:true
+		});
+		const updatedOrderForm = updateObject(this.state.orderForm, {
+			[inputId]: updatedFormElement
+		});
 
 		let formIsValid = true;
 		for (let inputId in updatedOrderForm) {
@@ -147,8 +150,6 @@ class ContactData extends Component {
 	};
 
 	render() {
-		if (this.props.error)
-			console.log(this.props.error)
 		const formElementsArray = [];
 		for (let key in this.state.orderForm) {
 			formElementsArray.push({
@@ -190,14 +191,16 @@ const mapStateToProps = state => {
 		ings: state.burgerBuilder.ingredients,
 		price: state.burgerBuilder.totalPrice,
 		loading: state.order.loading,
-		error: state.order.error
+		error: state.order.error,
+		token:state.auth.token,
+		userId : state.auth.userId
 	}
 
 };
 
 const  mapDispatchToProps = dispatch => {
 	return {
-		onOrderBurger: (orderData) => dispatch(actions.purchaseBurger(orderData))
+		onOrderBurger: (orderData, token) => dispatch(actions.purchaseBurger(orderData, token))
 	}
 };
 
